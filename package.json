@@ -1,0 +1,17 @@
+{
+  "name": "generational-cache",
+  "version": "0.0.0",
+  "description": "simple in memory generational cache",
+  "main": "index.js",
+  "scripts": {
+    "test": "tap test"
+  },
+  "author": "jlburkhead <jakelauburkhead@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "tap": "^1.0.2"
+  },
+  "dependencies": {
+    "lru-cache": "^2.6.2"
+  }
+}
