@@ -2,67 +2,92 @@ var Cache = require("../");
 var test = require("tap").test;
 
 test("get and set", function(t) {
-
+  t.plan(2);
   var cache = new Cache();
 
-  t.equal(cache.get("foo"), null);
-
-  cache.set("foo", 42);
-
-  t.equal(cache.get("foo"), 42);
-  t.end();
+  cache.get("foo", function(err, value) {
+    t.equal(value, null);
+    cache.set("foo", 42, function(err) {
+      cache.get("foo", function(err, value) {
+        t.equal(value, 42);
+      });
+    });
+  });
 
 });
 
 test("get and set with group", function(t) {
-
+  t.plan(3);
   var cache = new Cache();
 
-  t.equal(cache.get("foo", "bar"), null);
+  cache.get("foo", "bar", function(err, value) {
+    t.equal(value, null);
+    cache.set("foo", 42, "bar", function(err) {
 
-  cache.set("foo", 42, "bar");
+      cache.get("foo", function(err, value) {
+        t.equal(value, null);
+      });
 
-  t.equal(cache.get("foo"), null);
+      cache.get("foo", "bar", function(err, value) {
+        t.equal(value, 42);
+      });
 
-  t.equal(cache.get("foo", "bar"), 42);
-  t.end();
+    });
+  });
 
 });
 
 test("invalidate group", function(t) {
-
+  t.plan(2);
   var cache = new Cache();
 
-  cache.set("foo", 42, "bar");
-  t.equal(cache.get("foo", "bar"), 42);
+  cache.set("foo", 42, "bar", function(err) {
+    cache.get("foo", "bar", function(err, value) {
 
-  cache.invalidateGroup("bar");
+      t.equal(value, 42);
 
-  t.equal(cache.get("foo", "bar"), null);
-  t.end();
+      cache.invalidateGroup("bar", function(err) {
+        cache.get("foo", "bar", function(err, value) {
+          t.equal(value, null);
+        });
+      });
+
+    });
+  });
 
 });
 
 test("multiple groups", function(t) {
-
+  t.plan(6);
   var cache = new Cache();
 
-  cache.set("foo", 42, ["bar", "baz"]);
-  t.equal(cache.get("foo", ["bar", "baz"]), 42);
+  cache.set("foo", 42, ["bar", "baz"], function(err) {
+    cache.get("foo", ["bar", "baz"], function(err, value) {
+      t.equal(value, 42);
+      cache.get("foo", "bar", function(err, value) {
+        t.equal(value, null);
+        cache.get("foo", "baz", function(err, value) {
+          t.equal(value, null);
 
-  t.equal(cache.get("foo"), null);
-  t.equal(cache.get("foo", "bar"), null);
-  t.equal(cache.get("foo", "baz"), null);
+          cache.invalidateGroup("bar", function(err) {
+            cache.get("foo", ["bar", "baz"], function(err, value) {
+              t.equal(value, null);
+              cache.set("foo", 42, ["bar", "baz"], function(err) {
+                cache.get("foo", ["bar", "baz"], function(err, value) {
+                  t.equal(value, 42);
+                  cache.invalidateGroup("baz", function(err) {
+                    cache.get("foo", ["bar", "baz"], function(err, value) {
+                      t.equal(value, null);
+                    });
+                  });
+                });
+              });
+            });
+          });
 
-  cache.invalidateGroup("bar");
-  t.equal(cache.get("foo", ["bar", "baz"]), null);
-
-  cache.set("foo", 42, ["bar", "baz"]);
-  t.equal(cache.get("foo", ["bar", "baz"]), 42);
-
-  cache.invalidateGroup("baz");
-  t.equal(cache.get("foo", ["bar", "baz"]), null);
-
-  t.end();
+        });
+      });
+    });
+  });
 
 });
